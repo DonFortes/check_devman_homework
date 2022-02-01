@@ -14,7 +14,8 @@ def get_last_homework_status():
         with requests.get(URL, headers=HEADERS) as response:
             js_response = response.json()
     except requests.exceptions.ConnectionError:
-        pass
+        logger.debug('Ошибка соединения')
+        return None
     else:
         homework_status = js_response["status"]
         return homework_status
@@ -24,27 +25,22 @@ def prepare_message():
     """Prepares message to telegram."""
 
     homework_status = get_last_homework_status()
-    if homework_status == "found":
-        logger.debug("Статус изменился")
-        return "Домашку проверили"
-    else:
-        logger.debug("Статус не изменился")
-        return None
-
-
-def send_message():
-    """Sending message if status is changed."""
-
-    message = prepare_message()
-    if message is not None:
-        return bot.send_message(TELEGRAM_CHAT_ID, message)
+    if homework_status:
+        if homework_status == "found":
+            logger.debug("Статус изменился")
+            return "Домашку проверили"
+        else:
+            logger.debug("Статус не изменился")
+            return None
 
 
 def main():
     """Function that starts our service."""
-
-    time.sleep(3)  # Necessary delay for sending message to telegram
-    send_message()
+    message = prepare_message()
+    if message is not None:
+        bot.send_message(TELEGRAM_CHAT_ID, message)
+        time.sleep(3)  # Necessary delay for sending message to telegram
+    return None
 
 
 if __name__ == "__main__":
